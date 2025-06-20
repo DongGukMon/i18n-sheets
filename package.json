@@ -1,10 +1,14 @@
 {
   "name": "i18n-sheets",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "bin": {
+    "i18n-sheets": "bin/i18n-sheets"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsup src/index.ts --format esm,cjs --target node20 --dts",
+    "build": "tsup src/index.ts --format esm --target node20 --dts",
     "prepare": "npm run build",
     "test": "vitest run"
   },
@@ -13,10 +17,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "commander": "^14.0.0"
+    "commander": "^14.0.0",
+    "google-auth-library": "^9.15.1",
+    "google-spreadsheet": "^4.1.4",
+    "node-diff3": "^3.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
+    "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "eslint": "^9.29.0",
