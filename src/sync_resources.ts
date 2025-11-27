@@ -8,17 +8,18 @@ import { getTodayYMD } from './utils';
 
 export const syncResources = async () => {
   const constants = await getI18nConstants();
-  
-  fs.mkdirSync(path.dirname(constants.OUTPUT_PATH), { recursive: true });
-  fs.mkdirSync(path.dirname(constants.ANCHOR_OUTPUT_PATH), { recursive: true });
+
+  fs.mkdirSync(constants.OUTPUT_PATH, { recursive: true });
+  fs.mkdirSync(constants.ANCHOR_OUTPUT_PATH, { recursive: true });
+  fs.mkdirSync(constants.REMOTE_OUTPUT_PATH, { recursive: true });
 
   const mergedObj = await loadResources();
   await writeResources({ outputPath: constants.REMOTE_OUTPUT_PATH, resources: mergedObj });
 
   const languages: string[] = [];
-  const localFiles = fs.readdirSync(constants.OUTPUT_PATH);
-  const anchorFiles = fs.readdirSync(constants.ANCHOR_OUTPUT_PATH);
-  const remoteFiles = fs.readdirSync(constants.REMOTE_OUTPUT_PATH);
+  const localFiles = fs.existsSync(constants.OUTPUT_PATH) ? fs.readdirSync(constants.OUTPUT_PATH) : [];
+  const anchorFiles = fs.existsSync(constants.ANCHOR_OUTPUT_PATH) ? fs.readdirSync(constants.ANCHOR_OUTPUT_PATH) : [];
+  const remoteFiles = fs.existsSync(constants.REMOTE_OUTPUT_PATH) ? fs.readdirSync(constants.REMOTE_OUTPUT_PATH) : [];
   [...anchorFiles, ...localFiles, ...remoteFiles].forEach((fileName) => {
     const lan = fileName.split('.')[0].split('_')[0];
     if (languages.includes(lan)) {

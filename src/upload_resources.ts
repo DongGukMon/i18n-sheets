@@ -13,7 +13,11 @@ export const uploadResources = async () => {
     getSpreadSheetInstance(),
     getI18nConstants()
   ]);
-  
+
+  if (!fs.existsSync(constants.OUTPUT_PATH)) {
+    throw new Error(`Output path does not exist: ${constants.OUTPUT_PATH}\nPlease run 'i18n-sheets clone' first to download resources.`);
+  }
+
   let mergedResources = {} as Record<string, Record<string, unknown>>;
 
   for (const fileName of fs.readdirSync(constants.OUTPUT_PATH)) {
