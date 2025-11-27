@@ -32,8 +32,10 @@ npm install --save-dev i18n-sheets
 // i18n-sheets.config.js
 export default {
   googleSheetId: 'your-google-sheet-id',
-  clientEmail: 'your-service-account@project.iam.gserviceaccount.com',
-  privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
+  googleCredentials: {
+    clientEmail: 'your-service-account@project.iam.gserviceaccount.com',
+    privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
+  },
   outputPath: './src/i18n/resources',
   anchorOutputPath: './src/i18n/anchor',
   remoteOutputPath: './src/i18n/remote'
@@ -92,11 +94,12 @@ Create a configuration file in your project root. Supported formats:
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
 | `googleSheetId` | string | ✅ | Your Google Sheets document ID |
-| `clientEmail` | string | ✅ | Service account email |
-| `privateKey` | string | ✅ | Service account private key |
+| `googleCredentials` | object | ✅ | Google service account credentials |
+| `googleCredentials.clientEmail` | string | ✅ | Service account email |
+| `googleCredentials.privateKey` | string | ✅ | Service account private key |
 | `outputPath` | string | ✅ | Path for generated resource files |
-| `anchorOutputPath` | string | ✅ | Path for anchor/backup files |
-| `remoteOutputPath` | string | ✅ | Path for remote snapshot files |
+| `anchorOutputPath` | string | ❌ | Path for anchor/backup files (default: `.i18n-sheets/anchor`) |
+| `remoteOutputPath` | string | ❌ | Path for remote snapshot files (default: `.i18n-sheets/remote`) |
 
 ### Example Configurations
 
@@ -105,10 +108,12 @@ Create a configuration file in your project root. Supported formats:
 // i18n-sheets.config.js
 export default {
   googleSheetId: '1ABC123def456GHI789jkl',
-  clientEmail: 'i18n-service@my-project.iam.gserviceaccount.com',
-  privateKey: process.env.GOOGLE_PRIVATE_KEY,
+  googleCredentials: {
+    clientEmail: 'i18n-service@my-project.iam.gserviceaccount.com',
+    privateKey: process.env.GOOGLE_PRIVATE_KEY,
+  },
   outputPath: './src/i18n/resources',
-  anchorOutputPath: './src/i18n/anchor', 
+  anchorOutputPath: './src/i18n/anchor',
   remoteOutputPath: './src/i18n/remote'
 };
 ```
@@ -117,8 +122,10 @@ export default {
 ```json
 {
   "googleSheetId": "1ABC123def456GHI789jkl",
-  "clientEmail": "i18n-service@my-project.iam.gserviceaccount.com",
-  "privateKey": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "googleCredentials": {
+    "clientEmail": "i18n-service@my-project.iam.gserviceaccount.com",
+    "privateKey": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+  },
   "outputPath": "./src/i18n/resources",
   "anchorOutputPath": "./src/i18n/anchor",
   "remoteOutputPath": "./src/i18n/remote"
