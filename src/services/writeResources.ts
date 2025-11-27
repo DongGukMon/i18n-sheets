@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import prettier from 'prettier';
 import path from 'node:path';
+import { sortObjectKeys } from '../utils';
 
 export const writeResources = async ({
   outputPath,
@@ -34,7 +35,8 @@ export const writeResources = async ({
   await Promise.all(
     Object.entries(resources).map(async ([lan, obj]) => {
       languages.push(lan);
-      const content = `export const ${lan} = ${JSON.stringify(obj, null, 2)} as const;`;
+      const sortedObj = sortObjectKeys(obj);
+      const content = `export const ${lan} = ${JSON.stringify(sortedObj, null, 2)} as const;`;
       const formattedContent = await applyPrettier(content);
 
       const outPath = path.join(finalOutputPath, `${lan}${fileNameSuffix ? `_${fileNameSuffix}` : ''}.ts`);

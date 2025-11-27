@@ -60,3 +60,19 @@ export function getTodayYMD() {
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}${mm}${dd}`;
 }
+
+/** Recursively sort object keys alphabetically */
+export function sortObjectKeys<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+    return obj;
+  }
+
+  const sorted: AnyObj = {};
+  const keys = Object.keys(obj as AnyObj).sort();
+
+  for (const key of keys) {
+    sorted[key] = sortObjectKeys((obj as AnyObj)[key]);
+  }
+
+  return sorted as T;
+}

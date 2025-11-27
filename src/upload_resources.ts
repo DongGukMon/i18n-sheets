@@ -3,7 +3,7 @@ import { getI18nConstants } from './constants';
 import fs from 'fs';
 import { pathToFileURL } from 'node:url';
 import path from 'path';
-import { flatten, mergeDeep, numberToLetter } from './utils';
+import { flatten, mergeDeep, numberToLetter, sortObjectKeys } from './utils';
 import { cloneResources } from './services/cloneResources';
 
 type RowObj = Record<string, string>;
@@ -27,7 +27,7 @@ export const uploadResources = async () => {
     const fileUrl = pathToFileURL(path.join(constants.OUTPUT_PATH, fileName)).href;
     const mod = await import(fileUrl);
     const lan = fileName.split('.')[0];
-    const resource = mod[lan];
+    const resource = sortObjectKeys(mod[lan]);
 
     const reversedResource: Record<string, Record<string, unknown>> = {};
     Object.entries(resource).forEach(([entity, obj]) => {
