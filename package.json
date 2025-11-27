@@ -10,12 +10,29 @@
     "dev": "tsx src/index.ts",
     "build": "tsup src/index.ts --format esm --target node20 --dts",
     "prepare": "npm run build",
-    "test": "vitest run"
+    "release": "npm run build && npm publish"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "google-sheets",
+    "translation",
+    "cli",
+    "typescript",
+    "sync",
+    "localization"
+  ],
+  "author": "2ast",
+  "license": "MIT",
+  "description": "A powerful CLI tool for synchronizing internationalization (i18n) resources between Google Sheets and your TypeScript project",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DongGukMon/i18n-sheets.git"
+  },
+  "homepage": "https://github.com/DongGukMon/i18n-sheets#readme",
+  "bugs": {
+    "url": "https://github.com/DongGukMon/i18n-sheets/issues"
+  },
   "dependencies": {
     "commander": "^14.0.0",
     "google-auth-library": "^9.15.1",
