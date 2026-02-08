@@ -37,7 +37,6 @@ export const loadConfig = async (): Promise<I18nSheetsConfig> => {
       '{\n' +
       '  "outputPath": "./src/i18n/resources",\n' +
       '  "anchorOutputPath": "./src/i18n/anchor",\n' +
-      '  "remoteOutputPath": "./src/i18n/remote",\n' +
       '  "googleSheetId": "your-google-sheet-id",\n' +
       '  "googleCredentials": {\n' +
       '    "clientEmail": "your-service-account@project.iam.gserviceaccount.com",\n' +
@@ -48,7 +47,6 @@ export const loadConfig = async (): Promise<I18nSheetsConfig> => {
       'export default {\n' +
       '  outputPath: "./src/i18n/resources",\n' +
       '  anchorOutputPath: "./src/i18n/anchor", // optional\n' +
-      '  remoteOutputPath: "./src/i18n/remote", // optional\n' +
       '  googleSheetId: "your-google-sheet-id",\n' +
       '  googleCredentials: {\n' +
       '    clientEmail: "your-service-account@project.iam.gserviceaccount.com",\n' +

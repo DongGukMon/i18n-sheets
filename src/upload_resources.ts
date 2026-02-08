@@ -3,7 +3,7 @@ import { getI18nConstants } from './constants';
 import fs from 'fs';
 import { pathToFileURL } from 'node:url';
 import path from 'path';
-import { flatten, mergeDeep, numberToLetter } from './utils';
+import { flatten, mergeDeep, numberToLetter, sortObjectKeys } from './utils';
 import { cloneResources } from './services/cloneResources';
 
 type RowObj = Record<string, string>;
@@ -13,7 +13,11 @@ export const uploadResources = async () => {
     getSpreadSheetInstance(),
     getI18nConstants()
   ]);
-  
+
+  if (!fs.existsSync(constants.OUTPUT_PATH)) {
+    throw new Error(`Output path does not exist: ${constants.OUTPUT_PATH}\nPlease run 'i18n-sheets clone' first to download resources.`);
+  }
+
   let mergedResources = {} as Record<string, Record<string, unknown>>;
 
   for (const fileName of fs.readdirSync(constants.OUTPUT_PATH)) {
@@ -23,7 +27,7 @@ export const uploadResources = async () => {
     const fileUrl = pathToFileURL(path.join(constants.OUTPUT_PATH, fileName)).href;
     const mod = await import(fileUrl);
     const lan = fileName.split('.')[0];
-    const resource = mod[lan];
+    const resource = sortObjectKeys(mod[lan]);
 
     const reversedResource: Record<string, Record<string, unknown>> = {};
     Object.entries(resource).forEach(([entity, obj]) => {

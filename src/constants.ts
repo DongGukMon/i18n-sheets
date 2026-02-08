@@ -18,9 +18,6 @@ export const getI18nConstants = async () => {
     ANCHOR_OUTPUT_PATH: userConfig.anchorOutputPath 
       ? path.resolve(process.cwd(), userConfig.anchorOutputPath)
       : path.resolve(process.cwd(), '.i18n-sheets/anchor'),
-    REMOTE_OUTPUT_PATH: userConfig.remoteOutputPath 
-      ? path.resolve(process.cwd(), userConfig.remoteOutputPath)
-      : path.resolve(process.cwd(), '.i18n-sheets/remote'),
     TRANSLATION_KEY: 'translation_key',
     GOOGLE_SHEET_ID: userConfig.googleSheetId,
     TEMPLATE: 'template',
