@@ -6,7 +6,7 @@ A powerful CLI tool for synchronizing internationalization (i18n) resources betw
 
 - **📥 Clone**: Download translations from Google Sheets to local files
 - **📤 Upload**: Push local translations to Google Sheets
-- **🔄 Sync**: Intelligent three-way merge between local, remote, and anchor versions
+- **🔄 Sync**: Key-value level three-way merge between local, remote, and anchor versions
 - **⚙️ Configurable**: Support for JSON, JS, and MJS configuration files
 - **🎯 Force Mode**: Skip sync checks when needed
 - **✨ Auto-formatting**: Prettier integration for consistent code style
@@ -37,15 +37,13 @@ export default {
     privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
   },
   outputPath: './src/i18n/resources',
-  anchorOutputPath: './src/i18n/anchor',
-  remoteOutputPath: './src/i18n/remote'
 };
 ```
 
-2. **Run your first sync**:
+2. **Run your first clone**:
 
 ```bash
-i18n-sheets sync
+i18n-sheets clone
 ```
 
 ## 📋 Commands
@@ -75,7 +73,7 @@ i18n-sheets upload --force
 ```
 
 ### `sync` - Three-way merge
-Perform intelligent three-way merge between local, remote, and anchor versions.
+Perform key-value level three-way merge between local, remote, and anchor versions. Conflicts are auto-resolved (remote value wins) and reported as warnings.
 
 ```bash
 i18n-sheets sync
@@ -98,8 +96,7 @@ Create a configuration file in your project root. Supported formats:
 | `googleCredentials.clientEmail` | string | ✅ | Service account email |
 | `googleCredentials.privateKey` | string | ✅ | Service account private key |
 | `outputPath` | string | ✅ | Path for generated resource files |
-| `anchorOutputPath` | string | ❌ | Path for anchor/backup files (default: `.i18n-sheets/anchor`) |
-| `remoteOutputPath` | string | ❌ | Path for remote snapshot files (default: `.i18n-sheets/remote`) |
+| `anchorOutputPath` | string | ❌ | Path for anchor files (default: `.i18n-sheets/anchor`) |
 
 ### Example Configurations
 
@@ -113,8 +110,7 @@ export default {
     privateKey: process.env.GOOGLE_PRIVATE_KEY,
   },
   outputPath: './src/i18n/resources',
-  anchorOutputPath: './src/i18n/anchor',
-  remoteOutputPath: './src/i18n/remote'
+  anchorOutputPath: './src/i18n/anchor', // optional
 };
 ```
 
@@ -127,8 +123,7 @@ export default {
     "privateKey": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
   },
   "outputPath": "./src/i18n/resources",
-  "anchorOutputPath": "./src/i18n/anchor",
-  "remoteOutputPath": "./src/i18n/remote"
+  "anchorOutputPath": "./src/i18n/anchor"
 }
 ```
 
@@ -147,7 +142,7 @@ Use force flags to skip automatic sync when you're confident about overwriting:
 # Skip sync, directly clone from sheets
 i18n-sheets clone --force
 
-# Skip sync, directly upload to sheets  
+# Skip sync, directly upload to sheets
 i18n-sheets upload --force
 ```
 
@@ -163,19 +158,15 @@ your-project/
 │   │   ├── en.ts
 │   │   ├── ko.ts
 │   │   └── index.ts
-│   ├── anchor/                    # 📌 Anchor/backup versions (ANCHOR_OUTPUT_PATH)
-│   │   ├── en_20250621.ts
-│   │   └── ko_20250621.ts
-│   └── remote/                    # 🌐 Temporary remote snapshots (REMOTE_OUTPUT_PATH)
-│       ├── en_20250621.ts
-│       └── ko_20250621.ts
+│   └── anchor/                    # 📌 Anchor versions (ANCHOR_OUTPUT_PATH)
+│       ├── en.ts
+│       └── ko.ts
 ```
 
 ### Directory Purposes:
 
 - **`resources/` (OUTPUT_PATH)**: Contains your actual working translation files that you use in your application
 - **`anchor/` (ANCHOR_OUTPUT_PATH)**: Stores snapshot versions used as comparison baseline for three-way merge operations
-- **`remote/` (REMOTE_OUTPUT_PATH)**: Temporarily holds remote data during sync process - these files are automatically removed after sync completion
 
 ## 🔧 Google Sheets Setup
 
@@ -277,8 +268,8 @@ npm run build
 # Run locally
 npm run dev
 
-# Run tests (if available)
-npm test
+# Run tests
+npx vitest run
 ```
 
 ## 📄 License
@@ -295,9 +286,8 @@ MIT License - see LICENSE file for details.
 
 ## 📞 Support
 
-- 🐛 [Report Issues](https://github.com/your-username/i18n-sheets/issues)
-- 💬 [Discussions](https://github.com/your-username/i18n-sheets/discussions)
-- 📧 Email: your-email@example.com
+- 🐛 [Report Issues](https://github.com/DongGukMon/i18n-sheets/issues)
+- 💬 [Discussions](https://github.com/DongGukMon/i18n-sheets/discussions)
 
 ---
 

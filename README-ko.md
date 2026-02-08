@@ -6,7 +6,7 @@ Google Sheets와 TypeScript 프로젝트 간의 국제화(i18n) 리소스를 동
 
 - **📥 Clone**: Google Sheets에서 로컬 파일로 번역 다운로드
 - **📤 Upload**: 로컬 번역을 Google Sheets로 업로드
-- **🔄 Sync**: 로컬, 원격, 앵커 버전 간의 지능적인 3-way 병합
+- **🔄 Sync**: 로컬, 원격, 앵커 버전 간의 키-값 수준 3-way 병합
 - **⚙️ 설정 가능**: JSON, JS, MJS 설정 파일 지원
 - **🎯 강제 모드**: 필요시 동기화 검사 건너뛰기
 - **✨ 자동 포맷팅**: 일관된 코드 스타일을 위한 Prettier 통합
@@ -32,18 +32,18 @@ npm install --save-dev i18n-sheets
 // i18n-sheets.config.js
 export default {
   googleSheetId: 'your-google-sheet-id',
-  clientEmail: 'your-service-account@project.iam.gserviceaccount.com',
-  privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
+  googleCredentials: {
+    clientEmail: 'your-service-account@project.iam.gserviceaccount.com',
+    privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
+  },
   outputPath: './src/i18n/resources',
-  anchorOutputPath: './src/i18n/anchor',
-  remoteOutputPath: './src/i18n/remote'
 };
 ```
 
-2. **첫 번째 동기화 실행**:
+2. **첫 번째 클론 실행**:
 
 ```bash
-i18n-sheets sync
+i18n-sheets clone
 ```
 
 ## 📋 명령어
@@ -73,7 +73,7 @@ i18n-sheets upload --force
 ```
 
 ### `sync` - 3-way 병합
-로컬, 원격, 앵커 버전 간의 지능적인 3-way 병합을 수행합니다.
+로컬, 원격, 앵커 버전 간의 키-값 수준 3-way 병합을 수행합니다. 충돌 시 원격 값이 자동 채택되며, 경고로 보고됩니다.
 
 ```bash
 i18n-sheets sync
@@ -92,11 +92,11 @@ i18n-sheets sync
 | 옵션 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `googleSheetId` | string | ✅ | Google Sheets 문서 ID |
-| `clientEmail` | string | ✅ | 서비스 계정 이메일 |
-| `privateKey` | string | ✅ | 서비스 계정 개인 키 |
+| `googleCredentials` | object | ✅ | Google 서비스 계정 인증 정보 |
+| `googleCredentials.clientEmail` | string | ✅ | 서비스 계정 이메일 |
+| `googleCredentials.privateKey` | string | ✅ | 서비스 계정 개인 키 |
 | `outputPath` | string | ✅ | 생성된 리소스 파일 경로 |
-| `anchorOutputPath` | string | ✅ | 앵커/백업 파일 경로 |
-| `remoteOutputPath` | string | ✅ | 원격 스냅샷 파일 경로 |
+| `anchorOutputPath` | string | ❌ | 앵커 파일 경로 (기본값: `.i18n-sheets/anchor`) |
 
 ### 설정 예시
 
@@ -105,11 +105,12 @@ i18n-sheets sync
 // i18n-sheets.config.js
 export default {
   googleSheetId: '1ABC123def456GHI789jkl',
-  clientEmail: 'i18n-service@my-project.iam.gserviceaccount.com',
-  privateKey: process.env.GOOGLE_PRIVATE_KEY,
+  googleCredentials: {
+    clientEmail: 'i18n-service@my-project.iam.gserviceaccount.com',
+    privateKey: process.env.GOOGLE_PRIVATE_KEY,
+  },
   outputPath: './src/i18n/resources',
-  anchorOutputPath: './src/i18n/anchor', 
-  remoteOutputPath: './src/i18n/remote'
+  anchorOutputPath: './src/i18n/anchor', // 선택사항
 };
 ```
 
@@ -117,11 +118,12 @@ export default {
 ```json
 {
   "googleSheetId": "1ABC123def456GHI789jkl",
-  "clientEmail": "i18n-service@my-project.iam.gserviceaccount.com",
-  "privateKey": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "googleCredentials": {
+    "clientEmail": "i18n-service@my-project.iam.gserviceaccount.com",
+    "privateKey": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+  },
   "outputPath": "./src/i18n/resources",
-  "anchorOutputPath": "./src/i18n/anchor",
-  "remoteOutputPath": "./src/i18n/remote"
+  "anchorOutputPath": "./src/i18n/anchor"
 }
 ```
 
@@ -156,19 +158,15 @@ your-project/
 │   │   ├── en.ts
 │   │   ├── ko.ts
 │   │   └── index.ts
-│   ├── anchor/                    # 📌 앵커/백업 버전 (ANCHOR_OUTPUT_PATH)
-│   │   ├── en_20250621.ts
-│   │   └── ko_20250621.ts
-│   └── remote/                    # 🌐 임시 원격 스냅샷 (REMOTE_OUTPUT_PATH)
-│       ├── en_20250621.ts
-│       └── ko_20250621.ts
+│   └── anchor/                    # 📌 앵커 버전 (ANCHOR_OUTPUT_PATH)
+│       ├── en.ts
+│       └── ko.ts
 ```
 
 ### 디렉토리 용도:
 
 - **`resources/` (OUTPUT_PATH)**: 애플리케이션에서 실제로 사용하는 번역 파일들이 저장되는 경로
 - **`anchor/` (ANCHOR_OUTPUT_PATH)**: 3-way 병합 작업을 위한 비교 기준점으로 사용되는 스냅샷 버전들이 저장되는 경로
-- **`remote/` (REMOTE_OUTPUT_PATH)**: 동기화 과정에서 임시로 생성되는 원격 데이터 - 동기화 완료 후 자동으로 제거됨
 
 ## 🔧 Google Sheets 설정
 
@@ -270,8 +268,8 @@ npm run build
 # 로컬 실행
 npm run dev
 
-# 테스트 실행 (있는 경우)
-npm test
+# 테스트 실행
+npx vitest run
 ```
 
 ## 📄 라이선스
@@ -288,9 +286,8 @@ MIT 라이선스 - 자세한 내용은 LICENSE 파일을 참조하세요.
 
 ## 📞 지원
 
-- 🐛 [이슈 신고](https://github.com/your-username/i18n-sheets/issues)
-- 💬 [토론](https://github.com/your-username/i18n-sheets/discussions)
-- 📧 이메일: your-email@example.com
+- 🐛 [이슈 신고](https://github.com/DongGukMon/i18n-sheets/issues)
+- 💬 [토론](https://github.com/DongGukMon/i18n-sheets/discussions)
 
 ---
 
