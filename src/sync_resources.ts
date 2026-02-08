@@ -1,81 +1,93 @@
 import { loadResources } from './services/loadResources';
+import { parseLocalResources } from './services/parseLocalResources';
 import { writeResources } from './services/writeResources';
 import { getI18nConstants } from './constants';
-import fs from 'fs';
-import * as diff3 from 'node-diff3';
+import { flatten, unflatten, sortObjectKeys } from './utils';
+import { threeWayMerge, type ConflictEntry } from './diff';
+import fs from 'node:fs';
 import path from 'node:path';
-import { getTodayYMD } from './utils';
 
 export const syncResources = async () => {
   const constants = await getI18nConstants();
 
-  fs.mkdirSync(constants.OUTPUT_PATH, { recursive: true });
-  fs.mkdirSync(constants.ANCHOR_OUTPUT_PATH, { recursive: true });
-  fs.mkdirSync(constants.REMOTE_OUTPUT_PATH, { recursive: true });
+  // Migration: clean up old-format anchor files (.json, *_YYYYMMDD.ts) before loading
+  migrateOldAnchorFiles(constants.ANCHOR_OUTPUT_PATH);
 
-  const mergedObj = await loadResources();
-  await writeResources({ outputPath: constants.REMOTE_OUTPUT_PATH, resources: mergedObj });
+  // Phase 1: Parallel loading (network + disk I/O)
+  const [remoteResources, localResources, anchorResources] = await Promise.all([
+    loadResources(),
+    parseLocalResources(constants.OUTPUT_PATH),
+    parseLocalResources(constants.ANCHOR_OUTPUT_PATH),  // anchor is .ts now
+  ]);
 
-  const languages: string[] = [];
-  const localFiles = fs.existsSync(constants.OUTPUT_PATH) ? fs.readdirSync(constants.OUTPUT_PATH) : [];
-  const anchorFiles = fs.existsSync(constants.ANCHOR_OUTPUT_PATH) ? fs.readdirSync(constants.ANCHOR_OUTPUT_PATH) : [];
-  const remoteFiles = fs.existsSync(constants.REMOTE_OUTPUT_PATH) ? fs.readdirSync(constants.REMOTE_OUTPUT_PATH) : [];
-  [...anchorFiles, ...localFiles, ...remoteFiles].forEach((fileName) => {
-    const lan = fileName.split('.')[0].split('_')[0];
-    if (languages.includes(lan)) {
-      return;
-    }
-    languages.push(lan);
-  });
+  // Collect all languages from all sources
+  const languages = new Set([
+    ...Object.keys(remoteResources),
+    ...Object.keys(localResources),
+    ...Object.keys(anchorResources),
+  ]);
 
-  const results = await Promise.allSettled(
-    languages.map(async (lan) => {
-      const localFile = localFiles.find((it: string) => it.startsWith(lan));
-      const localText = localFile
-        ? fs.readFileSync(path.join(constants.OUTPUT_PATH, localFile), 'utf8').split('\n')
-        : [];
-      const anchorFile = anchorFiles.find((it: string) => it.startsWith(lan));
-      const anchorText = anchorFile
-        ? fs.readFileSync(path.join(constants.ANCHOR_OUTPUT_PATH, anchorFile), 'utf8').split('\n')
-        : [];
-      const remoteFile = remoteFiles.find((it: string) => it.startsWith(lan));
-      const remoteText = remoteFile
-        ? fs.readFileSync(path.join(constants.REMOTE_OUTPUT_PATH, remoteFile), 'utf8').split('\n')
-        : [];
+  const allConflicts: Record<string, ConflictEntry[]> = {};
+  const mergedResources: Record<string, unknown> = {};
 
-      const mergeResult = diff3.merge(localText, anchorText, remoteText);
+  // Phase 2: Sequential merge (CPU-bound)
+  for (const lan of languages) {
+    const localFlat = Object.fromEntries(flatten((localResources[lan] || {}) as Record<string, unknown>));
+    const anchorFlat = Object.fromEntries(flatten((anchorResources[lan] || {}) as Record<string, unknown>));
+    const remoteFlat = Object.fromEntries(flatten((remoteResources[lan] || {}) as Record<string, unknown>));
 
-      const outPath = path.join(constants.OUTPUT_PATH, `${lan}.ts`);
+    const { merged, conflicts } = threeWayMerge(localFlat, anchorFlat, remoteFlat);
+    mergedResources[lan] = sortObjectKeys(unflatten(merged));
 
-      fs.rmSync(outPath, {
-        recursive: true,
-        force: true,
-      });
-
-      fs.writeFileSync(outPath, mergeResult.result.join('\n'), 'utf8');
-
-      if (mergeResult.conflict) {
-        return lan;
-      }
-
-      const anchorOutPath = path.join(constants.ANCHOR_OUTPUT_PATH, `${lan}_${getTodayYMD()}.ts`);
-      fs.writeFileSync(anchorOutPath, mergeResult.result.join('\n'), 'utf8');
-    }),
-  );
-
-  fs.rmSync(constants.REMOTE_OUTPUT_PATH, {
-    recursive: true,
-    force: true,
-  });
-
-  const conflictLans = results.map((result) => (result as PromiseFulfilledResult<string>).value).filter(Boolean);
-  if (conflictLans?.length) {
-    {
-      const lans = conflictLans.join(', ');
-      throw new Error(`Please resolve conflicts on ${lans}`);
+    if (conflicts.length > 0) {
+      allConflicts[lan] = conflicts;
     }
   }
+
+  // Phase 3: Parallel writing
+  await Promise.all([
+    writeResources({
+      outputPath: constants.OUTPUT_PATH,
+      resources: mergedResources,
+      cleanBefore: true,
+      makeIndexFile: true,
+    }),
+    writeResources({
+      outputPath: constants.ANCHOR_OUTPUT_PATH,
+      resources: mergedResources,
+      cleanBefore: true,  // cleans old files automatically
+    }),
+  ]);
+
+  // Report conflicts
+  if (Object.keys(allConflicts).length > 0) {
+    console.warn('\n⚠️  Merge conflicts detected (auto-resolved):');
+    for (const [lan, conflicts] of Object.entries(allConflicts)) {
+      console.warn(`\n  [${lan}]`);
+      for (const c of conflicts) {
+        console.warn(`    ${c.key}:`);
+        console.warn(`      local:  ${c.localValue ?? '(deleted)'}`);
+        console.warn(`      remote: ${c.remoteValue ?? '(deleted)'}`);
+        console.warn(`      anchor: ${c.anchorValue ?? '(not exists)'}`);
+      }
+    }
+    console.warn('');
+  }
 };
+
+/** Remove old-format anchor files (.json, *_YYYYMMDD.ts) for migration */
+function migrateOldAnchorFiles(anchorPath: string) {
+  if (!fs.existsSync(anchorPath)) return;
+
+  const files = fs.readdirSync(anchorPath);
+  for (const file of files) {
+    // Remove .json files (old anchor format)
+    // Remove *_YYYYMMDD.ts files (old date-suffix format)
+    if (file.endsWith('.json') || /^.+_\d{8}\.ts$/.test(file)) {
+      fs.rmSync(path.join(anchorPath, file), { force: true });
+    }
+  }
+}
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   syncResources();

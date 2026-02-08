@@ -53,14 +53,6 @@ export function flatten(obj: AnyObj, prefix = ''): [string, string][] {
 
 export const numberToLetter = (n: number): string => (n >= 1 && n <= 26 ? String.fromCharCode(64 + n) : '');
 
-export function getTodayYMD() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0'); // 월은 0-based라 +1
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}${mm}${dd}`;
-}
-
 /** Recursively sort object keys alphabetically */
 export function sortObjectKeys<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
@@ -75,4 +67,13 @@ export function sortObjectKeys<T>(obj: T): T {
   }
 
   return sorted as T;
+}
+
+/** Reverse of flatten: converts { "a.b.c": "val" } → { a: { b: { c: "val" } } } */
+export function unflatten(entries: Record<string, string>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(entries)) {
+    setNestedValue(result, key.split('.'), value);
+  }
+  return result;
 }

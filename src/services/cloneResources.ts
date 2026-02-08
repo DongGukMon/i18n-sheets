@@ -1,7 +1,6 @@
 import { loadResources } from './loadResources';
 import { writeResources } from './writeResources';
 import { getI18nConstants } from '../constants';
-import { getTodayYMD } from '../utils';
 
 export const cloneResources = async () => {
   const [mergedObj, constants] = await Promise.all([
@@ -14,7 +13,6 @@ export const cloneResources = async () => {
     writeResources({
       outputPath: constants.ANCHOR_OUTPUT_PATH,
       resources: mergedObj,
-      fileNameSuffix: getTodayYMD(),
     })
   ]);
 };

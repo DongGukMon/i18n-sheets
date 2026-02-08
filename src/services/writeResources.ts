@@ -6,21 +6,25 @@ import { sortObjectKeys } from '../utils';
 export const writeResources = async ({
   outputPath,
   resources,
-  fileNameSuffix,
+  cleanBefore = true,
   makeIndexFile,
 }: {
   outputPath?: string;
   resources: Record<string, unknown>;
-  fileNameSuffix?: string;
+  cleanBefore?: boolean;
   makeIndexFile?: boolean;
 }) => {
   const { getI18nConstants } = await import('../constants');
   const constants = await getI18nConstants();
   const finalOutputPath = outputPath || constants.OUTPUT_PATH;
-  fs.rmSync(finalOutputPath, {
-    recursive: true,
-    force: true,
-  });
+  if (cleanBefore !== false) {
+    fs.rmSync(finalOutputPath, {
+      recursive: true,
+      force: true,
+    });
+  } else {
+    fs.mkdirSync(finalOutputPath, { recursive: true });
+  }
 
   const languages: string[] = [];
 
@@ -39,7 +43,7 @@ export const writeResources = async ({
       const content = `export const ${lan} = ${JSON.stringify(sortedObj, null, 2)} as const;`;
       const formattedContent = await applyPrettier(content);
 
-      const outPath = path.join(finalOutputPath, `${lan}${fileNameSuffix ? `_${fileNameSuffix}` : ''}.ts`);
+      const outPath = path.join(finalOutputPath, `${lan}.ts`);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, formattedContent, 'utf8');
       console.log(`✓ ${outPath}`);

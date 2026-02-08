@@ -22,7 +22,6 @@ program
   {
     "outputPath": "./src/i18n/resources",
     "anchorOutputPath": "./src/i18n/anchor",
-    "remoteOutputPath": "./src/i18n/remote",
     "googleSheetId": "your-google-sheet-id",
     "googleCredentials": {
       "clientEmail": "your-service-account@project.iam.gserviceaccount.com",
